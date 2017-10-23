@@ -1,0 +1,287 @@
+%YAML 1.2
+---
+# Ulrich Drepper <drepper@gmail.com>
+# October 2017
+name: Bison
+# See http://www.sublimetext.com/docs/3/syntax.html
+file_extensions:
+  - y
+first_line_match: '-\*- *bison *-\*-'
+scope: source.bison
+
+variables:
+  identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+
+contexts:
+  main:
+    - include: line_comment
+    - include: multiline_comment
+
+    - match: '^\s*%%\s*$'
+      scope: keyword.control.bison
+      set: rules
+
+    - match: '%(?:locations|debug|destructor|no-lines|pure-parser|token-table|verbose|yacc)'
+      scope: keyword.language.bison
+      push:
+        - match: $
+          pop: true
+        - match: '[^[:space:]]'
+          scope: invalid.illegal.bison
+
+    - match: '%defines'
+      scope: keyword.control.bison
+      push:
+        - match: $
+          pop: true
+        - match: '.'
+          scope: variable.parameter.bison
+
+    - match: '%(?:file-prefix|language|name-prefix|output|require|skeleton)'
+      scope: keyword.comment.bison
+      push:
+        - match: $
+          scope: invalid.illegal.bison
+          pop: true
+        - match: '"'
+          scope: string.quoted.double.bison
+          push: double_quoted_string
+
+    - match: '%define'
+      scope: keyword.control.bison
+      push:
+        - match: 'api.pure'
+          scope: variable.language.bison
+          set:
+            - match: '(true|\{true\}|"true"|false|\{false\}|"false"|full|\{full\}|"full")'
+              scope: support.constant.bison
+              set: empty_remainder
+            - include: empty_remainder
+        - match: 'api.push-pull'
+          scope: variable.language.bison
+          set:
+            - match: '(push|\{push\}|"push"|pull|\{pull\}|"pull"|both|\{both\}|"both")'
+              scope: support.constant.bison
+              set: empty_remainder
+            - include: not_empty_remainder
+        - match: '(?:api.token.constructor|lr.keep-unreachable-state|parse.assert|parse.trace)'
+          scope: variable.language.bison
+          set:
+            - match: '(true|\{true\}|"true"|false|\{false\}|"false")'
+              scope: support.constant.bison
+              set: empty_remainder
+            - include: not_empty_remainder
+        - match: 'api.namespace'
+          scope: variable.language.bison
+          set:
+            - match: '\{(?:::)?(?:{{identifier}}::)*{{identifier}}\}'
+              scope: meta.block.c++ string.quoted.other
+              set: empty_remainder
+            - match: '"(?:::)?(?:{{identifier}}::)*{{identifier}}"'
+              scope: meta.block.c++ string.quoted.other
+              set: empty_remainder
+            - match: $
+              scope: invalid.illegal.bison
+            - match: '[^[:space:]]'
+              scope: invalid.illegal.bison
+        - match: 'api.(?:location.type|prefix|token.prefix|value.union.name)'
+          scope: variable.language.bison
+          set: string_required
+        - match: 'location_type'
+          scope: invald.deprecated.bison
+          set: string_required
+        - match: 'api.value.type'
+          scope: variable.language.bison
+          set:
+            - match: '\{'
+              scope: meta.block.c++ punctuation.section.group.begin.c++
+              set:
+                - match: '\}'
+                  scope: meta.block.c++ punctuation.section.group.end.c++
+                  pop: true
+                - include: scope:source.c++#identifiers
+            - match: '(?:union-directive|union|variant)'
+              scope: support.constant.bison
+              set: empty_remainder
+            - include: not_empty_remainder
+        - match: 'lr.default-reduction'
+          scope: variable.language.bison
+          set:
+            - match: '(most|\{most\}|"most"|consistent|\{consistent\}|"consistent"|accepting|\{accepting\}|"accepting")'
+              scope: support.constant.bison
+              set: empty_remainder
+            - include: not_empty_remainder
+        - match: 'lr.type'
+          scope: variable.language.bison
+          set:
+            - match: '(lalr|\{lalr\}|"lalr"|ielr|\{ielr\}|"ielr"|canonical-lr|\{canonical-lr\}|"canonical-lr")'
+              scope: support.constant.bison
+              set: empty_remainder
+            - include: not_empty_remainder
+        - match: 'parse.error'
+          scope: variable.language.bison
+          set:
+            - match: '(simple|\{simple\}|"simple"|verbose|\{verbose\}|"verbose")'
+              scope: support.constant.bison
+              set: empty_remainder
+            - include: not_empty_remainder
+        - match: 'parse.lac'
+          scope: variable.language.bison
+          set:
+            - match: '(none|\{none\}|"none"|full|\{full\}|"full")'
+              scope: support.constant.bison
+              set: empty_remainder
+            - include: not_empty_remainder
+        - match: '[a-zA-Z.]+'
+          scope: variable.language.bison
+          set:
+            - match: '[a-zA-Z_0-9.]+'
+              scope: support.constant.bison
+              pop: true
+            - match: '\{'
+              scope: meta.block.c++ punctuation.section.group.begin.c++
+              set:
+                - match: '\}'
+                  scope: meta.block.c++ punctuation.section.group.end.c++
+                  pop: true
+                - include: scope:source.c++#generic-type
+
+    - match: '%code'
+      scope: keyword.language.bison
+      push:
+        - match: '(?:requires|provides|top|imports)'
+          scope: variable.language.bison
+          set:
+            - match: '\{'
+              scope: meta.block.c++ punctuation.section.group.begin.c++
+              set: codeblock
+        - match: '\{'
+          scope: meta.block.c++ punctuation.section.group.begin.c++
+          set: codeblock
+        - include: not_empty_remainder
+
+    - match: '%(?:lex|parse)-param'
+      scope: keyword.control.bison
+      push:
+        - match: '\{'
+          scope: meta.block.c++ punctuation.section.group.begin.c++
+          set:
+            - match: '\}'
+              scope: meta.block.c++ punctuation.section.group.end.c++
+              pop: true
+            - match: '\bvoid\b'
+              scope: storage.type.c++
+            - match: '{{identifier}}(?=\s*(\[|,|\)|=))'
+              scope: variable.parameter.c++
+            - include: scope:source.c++#expressions-minus-generic-type
+
+    - match: '%(?:token|right|left)'
+      scope: keyword.control.bison
+      push:
+        - match: $
+          pop: true
+        - match: '{{identifier}}'
+          scope: variable.parameter.bison
+        - match: "'[^']*'"
+          scope: string.quoted.single.bison
+
+    - match: '%start'
+      scope: keyword.control.bison
+      push:
+        - match: '{{identifier}}'
+          scope: entity.name.bison
+          set: empty_remainder
+        - match: '[^[:space:]]'
+          scope: invalid.illegal.bison
+
+  codeblock:
+    - match: '\}'
+      scope: meta.block.c++ punctuation.section.group.end.c++
+      pop: true
+    - include: scope:source.c++#preprocessor-other
+    - include: scope:source.c++#global
+
+  rules:
+    - match: '^\s*%%\s*$'
+      scope: keyword.control.bison 
+      set: epilogue
+    - match: '({{identifier}}+)(:)'
+      captures:
+        1: entity.name.rule.bison
+        2: keyword.operator.bison
+      push:
+        - match: '{{identifier}}'
+          scope: entity.name.reference.bison entity.name.reference.bison
+        - match: "'[^']*'"
+          scope: string.quoted.single.bison
+        - match: '\{'
+          scope: meta.block.c++ punctuation.section.group.begin.c++
+          push:
+            - match: '\}'
+              scope: meta.block.c++ punctuation.section.group.end.c++
+              pop: true
+            - match: '\$(\$|[0-9]+)'
+              scope: constant.language.bison
+            - include: scope:source.c++#preprocessor-other
+            - include: scope:source.c++#global
+        - match: '\|'
+          scope: keyword.operator.bison
+        - match: ';'
+          scope: keyword.operator.bison
+          pop: true
+        - match: '[^[:space:]]'
+          scope: invalid.illegal.bison
+    - match: '[^[:space:]]'
+      scope: invalid.illegal.bison
+
+  epilogue:
+    - include: scope:source.c++#preprocessor-other
+    - include: scope:source.c++#global
+
+  double_quoted_string:
+    - meta_scope: string.quoted.double.bison
+    - match: '\\.'
+      scope: constant.character.escape.bison
+    - match: '"'
+      scope: punctuation.definition.string.end.bison
+      pop: true
+
+  line_comment:
+    - match: '//'
+      scope: punctuation.definition.comment.bison
+      push:
+      - meta_scope: comment.line.bison
+      - match: $
+        pop: true
+
+  multiline_comment:
+    - match: '/\*'
+      scope: punctuation.definition.comment.bison
+      push:
+      - meta_scope: comment.block.bison
+      - match: '\*/'
+        pop: true
+
+  empty_remainder:
+    - match: $
+      pop: true
+    - match: '[^[:space:]]'
+      scope: invalid.illegal.bison
+
+  not_empty_remainder:
+    - match: $
+      scope: invalid.illegal.bison
+    - match: '[^[:space:]]'
+      scope: invalid.illegal.bison
+
+  string_required:
+    - match: '\{{{identifier}}\}'
+      scope: meta.block.c++ string.quoted.other
+      set: empty_remainder
+    - match: '"{{identifier}}"'
+      scope: meta.block.c++ string.quoted.other
+      set: empty_remainder
+    - match: $
+      scope: invalid.illegal.bison
+    - match: '[^[:space:]]'
+      scope: invalid.illegal.bison
