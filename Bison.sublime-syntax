@@ -214,6 +214,8 @@ contexts:
           scope: entity.name.reference.bison entity.name.reference.bison
         - match: "'[^']*'"
           scope: string.quoted.single.bison
+        - match: "\"[^\"]*\""
+          scope: string.quoted.double.bison
         - match: '\{'
           scope: meta.block.c++ punctuation.section.group.begin.c++
           push:
