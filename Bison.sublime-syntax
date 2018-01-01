@@ -212,6 +212,8 @@ contexts:
       push:
         - match: '{{identifier}}'
           scope: entity.name.reference.bison entity.name.reference.bison
+        - match: '%empty'
+          scope: keyword.control.bison
         - match: "'[^']*'"
           scope: string.quoted.single.bison
         - match: "\"[^\"]*\""
