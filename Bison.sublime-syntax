@@ -37,6 +37,15 @@ contexts:
         - match: '.'
           scope: variable.parameter.bison
 
+    - match: '%(expect|expect-rr)'
+      scope: keyword.control.bison
+      push:
+        - match: $
+          pop: true
+        - match: '[[:digit:]]+'
+          scope: variable.parameter.bison
+          set: empty_remainder
+
     - match: '%(?:file-prefix|language|name-prefix|output|require|skeleton)'
       scope: keyword.comment.bison
       push:
